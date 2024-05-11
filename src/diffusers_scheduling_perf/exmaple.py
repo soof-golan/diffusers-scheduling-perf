@@ -266,6 +266,8 @@ def run(
         device=device,
         dtype=dtype,
         num_images=num_images,
+        compile_unet=compile_unet,
+        compile_vae=compile_vae,
     )
     _logger.info(
         "Generation Parameters: seed=%s, num_inference_steps=%s, num_images=%s, batch_size=%s",
