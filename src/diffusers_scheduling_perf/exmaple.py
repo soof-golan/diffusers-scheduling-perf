@@ -56,6 +56,8 @@ def batch_size_before_oom(
     device: DeviceStr,
     dtype: DTypeStr,
     num_images: int,
+    width: int,
+    height: int,
     compile_unet: bool,
     compile_vae: bool,
 ) -> int:
@@ -77,6 +79,8 @@ def batch_size_before_oom(
         "num_images": num_images,
         "compile_unet": compile_unet,
         "compile_vae": compile_vae,
+        "width": width,
+        "height": height,
     }
     base_key = json.dumps(base_key_data, sort_keys=True)
     try:
@@ -109,6 +113,10 @@ def batch_size_before_oom(
                 num_inference_steps=2,
                 num_images=num_images,
                 seed=42,
+                width=width,
+                height=height,
+                compile_unet=compile_unet,
+                compile_vae=compile_vae,
             )
         except RuntimeError:
             _logger.info("OOM at %s", key)
@@ -128,6 +136,8 @@ def generate(
     seed: int = 42,
     num_inference_steps: int = 20,
     num_images: int = 1,
+    width: int = 512,
+    height: int = 512,
 ):
     return pipe(
         prompt=[DEFAULT_PROMPT] * batch_size,
@@ -137,6 +147,8 @@ def generate(
         ],
         num_inference_steps=num_inference_steps,
         num_images_per_prompt=num_images,
+        width=width,
+        height=height,
         return_dict=False,
     )
 
@@ -150,6 +162,8 @@ def infer_with_cleanup(
     batch_size: int,
     num_images: int,
     num_inference_steps,
+    width: int,
+    height: int,
     compile_unet: bool = False,
     compile_vae: bool = False,
 ):
@@ -178,6 +192,8 @@ def infer_with_cleanup(
         seed=seed,
         num_inference_steps=num_inference_steps,
         num_images=num_images,
+        width=width,
+        height=height,
     )
     synchronize_device_and_clear_cache(device)
     del pipe
@@ -191,6 +207,8 @@ def sanity_check(
     device: DeviceStr,
     dtype: DTypeStr,
     num_images: int,
+    width: int,
+    height: int,
     compile_unet: bool = False,
     compile_vae: bool = False,
 ) -> bool:
@@ -222,6 +240,8 @@ def sanity_check(
             seed=42,
             num_inference_steps=2,
             batch_size=1,
+            width=width,
+            height=height,
             compile_unet=compile_unet,
             compile_vae=compile_vae,
         )
@@ -242,6 +262,8 @@ def run(
     seed: int = 42,
     num_inference_steps: int = 20,
     num_images: int = 1,
+    width: int = 512,
+    height: int = 512,
     batch_size: Optional[int] = None,
     timeit_iterations: int = 10,
     compile_unet: bool = False,
@@ -259,6 +281,8 @@ def run(
         device=device,
         dtype=dtype,
         num_images=num_images,
+        width=width,
+        height=height,
         compile_unet=compile_unet,
         compile_vae=compile_vae,
     ):
@@ -269,6 +293,8 @@ def run(
         device=device,
         dtype=dtype,
         num_images=num_images,
+        width=width,
+        height=height,
         compile_unet=compile_unet,
         compile_vae=compile_vae,
     )
@@ -298,4 +324,6 @@ def run(
             seed=seed,
             num_inference_steps=num_inference_steps,
             num_images=num_images,
+            width=width,
+            height=height,
         )

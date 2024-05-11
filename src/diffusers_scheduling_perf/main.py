@@ -56,6 +56,18 @@ def main():
         help="Batch size.",
     )
     parser.add_argument(
+        "--width",
+        type=int,
+        default=512,
+        help="Image width.",
+    )
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=512,
+        help="Image height.",
+    )
+    parser.add_argument(
         "--timeit-iterations",
         type=int,
         default=10,
@@ -88,6 +100,8 @@ def main():
         seed=args.seed,
         num_inference_steps=args.num_inference_steps,
         num_images=args.num_images,
+        width=args.width,
+        height=args.height,
         batch_size=args.batch_size,
         timeit_iterations=args.timeit_iterations,
         compile_unet=args.compile_unet,
