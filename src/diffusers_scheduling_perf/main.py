@@ -5,6 +5,12 @@ from typing import Optional
 from diffusers_scheduling_perf.exmaple import run
 
 
+def compile_parser() -> ArgumentParser:
+    parser = ArgumentParser()
+
+    return parser
+
+
 def main():
     parser = ArgumentParser()
     parser.add_argument(
@@ -55,12 +61,24 @@ def main():
         default=10,
         help="Number of iterations for timeit.",
     )
-
     parser.add_argument(
         "--debug",
         action="store_true",
         help="Enable debug mode.",
     )
+    parser.add_argument(
+        "--compile-unet",
+        action="store_true",
+        help="Compile the U-Net model. (only applicable for CUDA)",
+        default=False,
+    )
+    parser.add_argument(
+        "--compile-vae",
+        action="store_true",
+        help="Compile the VAE model. (only applicable for CUDA)",
+        default=False,
+    )
+
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     return run(
@@ -72,6 +90,8 @@ def main():
         num_images=args.num_images,
         batch_size=args.batch_size,
         timeit_iterations=args.timeit_iterations,
+        compile_unet=args.compile_unet,
+        compile_vae=args.compile_vae,
     )
 
 

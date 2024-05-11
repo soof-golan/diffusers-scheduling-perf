@@ -1,4 +1,5 @@
 import gc
+import json
 import logging
 from typing import Optional
 import torch
@@ -19,16 +20,28 @@ _logger = logging.getLogger(__name__)
 
 def load_model(
     *,
-    model_name: str = "runwayml/stable-diffusion-v1-5",
-    device: DeviceStr = "cpu",
-    torch_dtype: DTypeStr = "float32",
+    model_name: str,
+    device: DeviceStr,
+    torch_dtype: DTypeStr,
+    compile_unet: bool,
+    compile_vae: bool,
     scheduler: Optional[SchedulerMixin] = None,
 ) -> StableDiffusionPipeline:
+    torch_device = torch.device(device)
     pipe = StableDiffusionPipeline.from_pretrained(
         model_name,
         torch_dtype=_dtype_map[torch_dtype],
     )
-    pipe = pipe.to(device=torch.device(device))
+    pipe = pipe.to(device=torch_device)
+    pipe.unet = torch.compile(
+        pipe.unet,
+        disable=not compile_unet or torch_device.type != "cuda",
+    )
+
+    pipe.vae = torch.compile(
+        pipe.vae,
+        disable=not compile_vae or torch_device.type != "cuda",
+    )
 
     # Patch Scheduler
     if scheduler is not None:
@@ -43,6 +56,8 @@ def batch_size_before_oom(
     device: DeviceStr,
     dtype: DTypeStr,
     num_images: int,
+    compile_unet: bool,
+    compile_vae: bool,
 ) -> int:
     _logger.info(
         "Determining batch size before OOM for model=%s, device=%s, dtype=%s",
@@ -55,7 +70,15 @@ def batch_size_before_oom(
         name = torch.cuda.get_device_name(torch.device(device))
     else:
         name = device
-    base_key = f"{model_name=}-{name=}-{dtype=}-{num_images=}-{device=}"
+    base_key_data = {
+        "model_name": model_name,
+        "device": name,
+        "dtype": dtype,
+        "num_images": num_images,
+        "compile_unet": compile_unet,
+        "compile_vae": compile_vae,
+    }
+    base_key = json.dumps(base_key_data, sort_keys=True)
     try:
         return cache[base_key]
     except KeyError:
@@ -64,8 +87,8 @@ def batch_size_before_oom(
     powers_of_two = [1 << i for i in range(6, 0, -1)]
     for batch_size in (pb := tqdm(powers_of_two, desc="Finding batch size before OOM")):
         pb.set_postfix(batch_size=batch_size)
-        key = f"{base_key}-{batch_size}"
-
+        key_data = base_key_data.copy() | {"batch_size": batch_size}
+        key = json.dumps(key_data, sort_keys=True)
         try:
             result = cache[key]
             if result == -1:
@@ -124,6 +147,8 @@ def infer_with_cleanup(
     batch_size: int,
     num_images: int,
     num_inference_steps,
+    compile_unet: bool = False,
+    compile_vae: bool = False,
 ):
     _logger.info(
         "Inference with model=%s, device=%s, dtype=%s",
@@ -131,7 +156,13 @@ def infer_with_cleanup(
         device,
         dtype,
     )
-    pipe = load_model(model_name=model_name, device=device, torch_dtype=dtype)
+    pipe = load_model(
+        model_name=model_name,
+        device=device,
+        torch_dtype=dtype,
+        compile_unet=compile_unet,
+        compile_vae=compile_vae,
+    )
     _logger.info(
         "Running Inference with batch_size=%s, num_images=%s num_inference_steps=%s",
         batch_size,
@@ -156,10 +187,21 @@ def sanity_check(
     model_name: str,
     device: DeviceStr,
     dtype: DTypeStr,
-    seed: int,
     num_images: int,
+    compile_unet: bool = False,
+    compile_vae: bool = False,
 ) -> bool:
-    key = f"{model_name=}-{device=}-{dtype=}-{num_images=}"
+    key = json.dumps(
+        {
+            "model_name": model_name,
+            "device": device,
+            "dtype": dtype,
+            "num_images": num_images,
+            "compile_unet": compile_unet,
+            "compile_vae": compile_vae,
+        },
+        sort_keys=True,
+    )
     _logger.info("Sanity check: Generating %s", key)
     cache = DiskCache("sanity_check_cache.db")
     try:
@@ -174,9 +216,11 @@ def sanity_check(
             device=device,
             dtype=dtype,
             num_images=num_images,
-            seed=seed,
+            seed=42,
             num_inference_steps=2,
             batch_size=1,
+            compile_unet=compile_unet,
+            compile_vae=compile_vae,
         )
     except Exception as e:
         _logger.exception("Sanity check failed %s", e, exc_info=e)
@@ -197,6 +241,8 @@ def run(
     num_images: int = 1,
     batch_size: Optional[int] = None,
     timeit_iterations: int = 10,
+    compile_unet: bool = False,
+    compile_vae: bool = False,
 ):
     _logger.info(
         "Running with model=%s, device=%s, dtype=%s",
@@ -209,8 +255,9 @@ def run(
         model_name=model_name,
         device=device,
         dtype=dtype,
-        seed=seed,
         num_images=num_images,
+        compile_unet=compile_unet,
+        compile_vae=compile_vae,
     ):
         raise RuntimeError("Sanity check failed")
 
@@ -228,7 +275,13 @@ def run(
         batch_size,
     )
 
-    pipe = load_model(model_name=model_name, device=device, torch_dtype=dtype)
+    pipe = load_model(
+        model_name=model_name,
+        device=device,
+        torch_dtype=dtype,
+        compile_unet=compile_unet,
+        compile_vae=compile_vae,
+    )
     for _ in tqdm(
         range(timeit_iterations),
         desc="Running Inference",
