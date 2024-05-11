@@ -80,7 +80,9 @@ def batch_size_before_oom(
     }
     base_key = json.dumps(base_key_data, sort_keys=True)
     try:
-        return cache[base_key]
+        optimal_batch_size = cache[base_key]
+        _logger.info("Found optimal batch size in cache %s", optimal_batch_size)
+        return optimal_batch_size
     except KeyError:
         pass
 
@@ -112,6 +114,7 @@ def batch_size_before_oom(
             _logger.info("OOM at %s", key)
             cache[key] = -1
             continue
+        _logger.info("Found largest batch_size=%s for %s", batch_size, key)
         cache[base_key] = batch_size
         cache[key] = batch_size
         return batch_size
