@@ -92,7 +92,7 @@ def batch_size_before_oom(
         try:
             result = cache[key]
             if result == -1:
-                _logger.debug("Skipping %s as it is known to OOM", key)
+                _logger.info("Skipping %s as it is known to OOM", key)
                 continue
             return batch_size
         except KeyError:
@@ -109,7 +109,7 @@ def batch_size_before_oom(
                 seed=42,
             )
         except RuntimeError:
-            _logger.debug("OOM at %s", key)
+            _logger.info("OOM at %s", key)
             cache[key] = -1
             continue
         cache[base_key] = batch_size
