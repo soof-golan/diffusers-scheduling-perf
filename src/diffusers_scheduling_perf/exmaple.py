@@ -300,13 +300,20 @@ def run(
         compile_unet=compile_unet,
         compile_vae=compile_vae,
     )
-    _logger.info(
-        "Generation Parameters: seed=%s, num_inference_steps=%s, num_images=%s, batch_size=%s",
-        seed,
-        num_inference_steps,
-        num_images,
-        batch_size,
-    )
+    params = {
+        "model_name": model_name,
+        "device": device,
+        "dtype": dtype,
+        "seed": seed,
+        "num_inference_steps": num_inference_steps,
+        "num_images": num_images,
+        "width": width,
+        "height": height,
+        "batch_size": batch_size,
+        "compile_unet": compile_unet,
+        "compile_vae": compile_vae,
+    }
+    _logger.info("Generation Parameters: %s", params)
 
     pipe = load_model(
         model_name=model_name,
