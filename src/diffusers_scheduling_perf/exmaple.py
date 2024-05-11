@@ -193,10 +193,10 @@ def run(
     device: DeviceStr = "cpu",
     dtype: DTypeStr = "float32",
     seed: int = 42,
-    num_inference_steps: int = 50,
+    num_inference_steps: int = 20,
     num_images: int = 1,
     batch_size: Optional[int] = None,
-    timeit_iterations: int = 100,
+    timeit_iterations: int = 10,
 ):
     _logger.info(
         "Running with model=%s, device=%s, dtype=%s",

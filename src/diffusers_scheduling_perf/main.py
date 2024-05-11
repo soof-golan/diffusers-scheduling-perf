@@ -34,7 +34,7 @@ def main():
     parser.add_argument(
         "--num_inference_steps",
         type=int,
-        default=50,
+        default=20,
         help="Number of inference steps.",
     )
     parser.add_argument(
@@ -52,7 +52,7 @@ def main():
     parser.add_argument(
         "--timeit-iterations",
         type=int,
-        default=100,
+        default=10,
         help="Number of iterations for timeit.",
     )
 
