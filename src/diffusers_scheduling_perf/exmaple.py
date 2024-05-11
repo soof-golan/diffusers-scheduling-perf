@@ -132,7 +132,7 @@ def batch_size_before_oom(
                 compile_vae=compile_vae,
             )
         except RuntimeError:
-            _logger.info("OOM at %s", key)
+            _logger.info("OOM with batch_size=%s for %s", batch_size, key)
             cache[key] = -1
             continue
         _logger.info("Found largest batch_size=%s for %s", batch_size, key)
