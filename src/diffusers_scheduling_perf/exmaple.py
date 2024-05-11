@@ -86,7 +86,7 @@ def batch_size_before_oom(
     except KeyError:
         pass
 
-    powers_of_two = [1 << i for i in range(6, 0, -1)]
+    powers_of_two = [1 << i for i in range(8, 0, -1)]
     for batch_size in (pb := tqdm(powers_of_two, desc="Finding batch size before OOM")):
         pb.set_postfix(batch_size=batch_size)
         key_data = base_key_data.copy() | {"batch_size": batch_size}
