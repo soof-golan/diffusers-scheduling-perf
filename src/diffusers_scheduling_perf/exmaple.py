@@ -153,18 +153,18 @@ def infer_with_cleanup(
 
 def sanity_check(
     *,
-    model_name: str = "runwayml/stable-diffusion-v1-5",
-    device: DeviceStr = "cpu",
-    dtype: DTypeStr = "float32",
-    seed: int = 42,
-    num_images: int = 4,
+    model_name: str,
+    device: DeviceStr,
+    dtype: DTypeStr,
+    seed: int,
+    num_images: int,
 ) -> bool:
-    _logger.info("Sanity check: Generating %s images", num_images)
-    cache = DiskCache("sanity_check_cache.db")
     key = f"{model_name=}-{device=}-{dtype=}-{num_images=}"
+    _logger.info("Sanity check: Generating %s", key)
+    cache = DiskCache("sanity_check_cache.db")
     try:
         is_sane = bool(cache[key])
-        _logger.info("found sanity check in cache %s", is_sane)
+        _logger.info("found sanity check in cache key=(%s) success=%s", key, is_sane)
         return is_sane
     except KeyError:
         pass
@@ -205,7 +205,13 @@ def run(
         dtype,
     )
 
-    if not sanity_check():
+    if not sanity_check(
+        model_name=model_name,
+        device=device,
+        dtype=dtype,
+        seed=seed,
+        num_images=num_images,
+    ):
         raise RuntimeError("Sanity check failed")
 
     batch_size = batch_size or batch_size_before_oom(
