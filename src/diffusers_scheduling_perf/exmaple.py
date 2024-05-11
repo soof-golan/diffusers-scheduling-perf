@@ -218,6 +218,8 @@ def sanity_check(
             "device": device,
             "dtype": dtype,
             "num_images": num_images,
+            "width": width,
+            "height": height,
             "compile_unet": compile_unet,
             "compile_vae": compile_vae,
         },
