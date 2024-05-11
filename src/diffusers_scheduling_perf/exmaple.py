@@ -115,6 +115,19 @@ def batch_size_before_oom(
                 seed=42,
                 width=width,
                 height=height,
+                compile_unet=False,
+                compile_vae=False,
+            )
+            infer_with_cleanup(
+                model_name=model_name,
+                device=device,
+                dtype=dtype,
+                batch_size=batch_size,
+                num_inference_steps=2,
+                num_images=num_images,
+                seed=42,
+                width=width,
+                height=height,
                 compile_unet=compile_unet,
                 compile_vae=compile_vae,
             )
